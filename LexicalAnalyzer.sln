@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LexicalAnalyzer", "LexicalAnalyzer\LexicalAnalyzer.csproj", "{5F986C44-5195-4ABE-947A-4093310ED814}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LexicalAnalyzerTests", "LexicalAnalyzerTests\LexicalAnalyzerTests.csproj", "{FC1B3507-A610-40F4-AD00-0D487A980E4A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SParser", "SParser\SParser.csproj", "{97F61D45-E24E-41FF-B767-BAF1871A8536}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5F986C44-5195-4ABE-947A-4093310ED814}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F986C44-5195-4ABE-947A-4093310ED814}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F986C44-5195-4ABE-947A-4093310ED814}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F986C44-5195-4ABE-947A-4093310ED814}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC1B3507-A610-40F4-AD00-0D487A980E4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC1B3507-A610-40F4-AD00-0D487A980E4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC1B3507-A610-40F4-AD00-0D487A980E4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC1B3507-A610-40F4-AD00-0D487A980E4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97F61D45-E24E-41FF-B767-BAF1871A8536}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97F61D45-E24E-41FF-B767-BAF1871A8536}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97F61D45-E24E-41FF-B767-BAF1871A8536}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97F61D45-E24E-41FF-B767-BAF1871A8536}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
