@@ -71,18 +71,18 @@ namespace SParser
         {
             Fsm lexer = new Fsm();
 
-            FsmState space = new FsmState("space");
+            FsmState space = new FsmState("space", true);
             space.Add(@"\s", space);
 
-            FsmState atom = new FsmState("atom");
+            FsmState atom = new FsmState("atom", true);
             atom.Add(@"[^\s()""]", atom);
 
             FsmState str = new FsmState("str-atom");
             str.Add(@"[^""]", str);
-            str.Add(@"""", new FsmState() { { @"""", str } });
+            str.Add(@"""", new FsmState(true) { { @"""", str } });
             FsmState first = new FsmState() {
-                                 { @"(", new FsmState("opening-bracket") },
-                                 { @")", new FsmState("closing-bracket") },
+                                 { @"(", new FsmState("opening-bracket", true) },
+                                 { @")", new FsmState("closing-bracket", true) },
                                  { @"[^\s()""]", atom },
                                  { @"\s", space },
                                  { @"""", str }

@@ -10,12 +10,17 @@ namespace LexicalAnalyzer
     public class FsmState : IEnumerable<KeyValuePair<string, FsmState>>
     {
         public string LexemeClass = null;
+        public bool Final = false;
         public List<KeyValuePair<string, FsmState>> Transitions = new List<KeyValuePair<string, FsmState>>();
 
-        public FsmState(string lexClass = null)
+        public FsmState(string lexClass, bool final)
         {
             LexemeClass = lexClass;
+            Final = final;
         }
+        public FsmState(string lexClass) : this(lexClass, false) { }
+        public FsmState(bool final) : this(null, final) { }
+        public FsmState() : this(null, false) { }
 
         public bool ContainsState(char ch)
         {
@@ -81,6 +86,7 @@ namespace LexicalAnalyzer
             IEnumerator<char> en = input.GetEnumerator();
             int pos = 0;
             Token lex = new Token();
+            bool complited = false;
             FsmState state = FirstState;
             bool doNotMove = false;
             while (doNotMove || en.MoveNext())
@@ -91,14 +97,16 @@ namespace LexicalAnalyzer
                 {
                     if (state.LexemeClass != null)
                         lex.Class = state.LexemeClass;
+                    complited = state.Final;
                 }
                 else
                 {
                     state = FirstState;
-                    if (lex.Class != null)
+                    if (lex.Class != null && complited)
                         doNotMove = true;
                     else
                     {
+                        lex.Class = null;
                         do
                         {
                             if (state.ContainsState(en.Current))
@@ -112,6 +120,7 @@ namespace LexicalAnalyzer
                     lex.Length = pos - lex.Start;
                     yield return lex;
                     lex = new Token(pos);
+                    complited = false;
                     continue;
                 }
                 pos++;
@@ -119,6 +128,7 @@ namespace LexicalAnalyzer
             int len = pos - lex.Start;
             if (len != 0)
             {
+                lex.Class = complited ? lex.Class : null;
                 lex.Length = len;
                 yield return lex;
             }
