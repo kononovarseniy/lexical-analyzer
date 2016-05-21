@@ -12,17 +12,39 @@ namespace SParser
     {
         public SType Type { get; protected set; }
         public abstract string ToString(int deep);
-        protected SExpr(SType type)
+        private static IEnumerable<SExpr> ParseImpl(IEnumerator<MyToken> input, bool isTopLevel = true)
         {
-            Type = type;
+            while (true)
+            {
+                if (!input.MoveNext())
+                {
+                    if (isTopLevel) yield break;
+                    else throw new ArgumentException();
+                }
+                MyToken current = input.Current;
+                if (!isTopLevel && current.Class == "closing-bracket")
+                    yield break;
+                else if (current.Class == "atom")
+                    yield return new SAtom(current.Text);
+                else if (current.Class == "str-atom")
+                    yield return new SString(((StrToken)current).Value);
+                else if (current.Class == "opening-bracket")
+                    yield return new SList(ParseImpl(input, false));
+            }
+        }
+
+        public static IEnumerable<SExpr> Parse(IEnumerable<MyToken> input)
+        {
+            var en = input.GetEnumerator();
+            return ParseImpl(en);
         }
     }
     class SAtom : SExpr
     {
         public string Name;
-        public SAtom(string name) : this(name, SType.Atom) { }
-        protected SAtom(string name, SType type) : base(type)
+        public SAtom(string name)
         {
+            Type = SType.Atom;
             Name = name;
         }
         public override string ToString(int deep) => new string(' ', deep * 4) + Name;
@@ -30,18 +52,23 @@ namespace SParser
     }
     class SString : SAtom
     {
-        public SString(string name) : base(name, SType.Srting) { }
+        public SString(string name) : base(name)
+        {
+            Type = SType.Srting;
+        }
     }
     class SList : SExpr, IEnumerable<SExpr>
     {
         public List<SExpr> Children;
 
-        public SList() : base(SType.Atom)
+        public SList()
         {
+            Type = SType.List;
             Children = new List<SExpr>();
         }
-        public SList(IEnumerable<SExpr> collection) : base(SType.Atom)
+        public SList(IEnumerable<SExpr> collection)
         {
+            Type = SType.List;
             Children = new List<SExpr>(collection);
         }
 
