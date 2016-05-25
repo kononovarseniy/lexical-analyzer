@@ -9,23 +9,15 @@ using System.IO;
 
 namespace SParser
 {
-    class MyToken : Token
+    sealed class SToken : Token { }
+    sealed class SStrToken : Token
     {
-        public string Text;
-        public MyToken(Token token, string sourceString) : base(token)
+        public string Value { get; private set; } = "";
+        protected override void SetText(string text)
         {
-            Text = sourceString.Substring(token.Start, token.Length);
+            base.SetText(text);
+            Value = text.Substring(1, text.Length - 2).Replace("\"\"", "\"");
         }
-        public override string ToString() => $"\"{Text}\"";
-    }
-    class StrToken : MyToken
-    {
-        public string Value = "";
-        public StrToken(Token token, string sourceString) : base(token, sourceString)
-        {
-            Value = Text.Substring(1, token.Length - 2).Replace("\"\"", "\"");
-        }
-        public override string ToString() => $"\"{Text}\" value=\"{Value}\"";
     }
     class Program
     {
@@ -59,14 +51,14 @@ namespace SParser
             var lexemes = lexer.GetLexemes(input);
             var tokens = Fsm.GetTokens(lexemes, (lex) =>
             {
-                Token res;
+                Lexeme res;
                 if (lex.Class == null)
                     throw new Exception();
                 if (lex.Class == "str-atom")
-                    res = new StrToken(lex, input);
+                    res = lex.ToToken<SStrToken>(input);
                 else
-                    res = new MyToken(lex, input);
-                var list = new List<Token>();
+                    res = lex.ToToken<SToken>(input);
+                var list = new List<Lexeme>();
                 if (lex.Class != "space")
                     list.Add(res);
                 return list;
@@ -75,7 +67,7 @@ namespace SParser
             {
                 Console.WriteLine($"{tok.Class ?? "ERROR",-20} = {tok}");
             }
-            return new SList(SExpr.Parse(tokens.Select(t => t as MyToken)));
+            return new SList(SExpr.Parse(tokens.Select(t => t as Token)));
         }
 
         static void Main(string[] args)

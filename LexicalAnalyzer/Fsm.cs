@@ -55,37 +55,15 @@ namespace LexicalAnalyzer
             return ((IEnumerable<KeyValuePair<string, FsmState>>)Transitions).GetEnumerator();
         }
     }
-    public class Token
-    {
-        public int Start;
-        public int Length;
-        public string Class;
-        public Token(int start = 0)
-        {
-            Start = start;
-            Length = 0;
-            Class = null;
-        }
-        public Token(Token token)
-        {
-            CopyFrom(token);
-        }
-        public void CopyFrom(Token token)
-        {
-            Start = token.Start;
-            Length = token.Length;
-            Class = token.Class;
-        }
-    }
     public class Fsm
     {
         public FsmState FirstState;
 
-        public IEnumerable<Token> GetLexemes(IEnumerable<char> input)
+        public IEnumerable<Lexeme> GetLexemes(IEnumerable<char> input)
         {
             IEnumerator<char> en = input.GetEnumerator();
             int pos = 0;
-            Token lex = new Token();
+            Lexeme lex = new Lexeme();
             bool complited = false;
             FsmState state = FirstState;
             bool doNotMove = false;
@@ -119,7 +97,7 @@ namespace LexicalAnalyzer
                     }
                     lex.Length = pos - lex.Start;
                     yield return lex;
-                    lex = new Token(pos);
+                    lex = new Lexeme(pos);
                     complited = false;
                     continue;
                 }
@@ -134,7 +112,7 @@ namespace LexicalAnalyzer
             }
         }
 
-        public static IEnumerable<Token> GetTokens(IEnumerable<Token> lexemes, Func<Token, IEnumerable<Token>> evaluator)
+        public static IEnumerable<Lexeme> GetTokens(IEnumerable<Lexeme> lexemes, Func<Lexeme, IEnumerable<Lexeme>> evaluator)
         {
             foreach (var lex in lexemes)
                 foreach (var tok in evaluator(lex))

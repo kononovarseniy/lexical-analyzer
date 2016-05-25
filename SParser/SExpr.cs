@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using LexicalAnalyzer;
 
 namespace SParser
 {
@@ -12,7 +13,7 @@ namespace SParser
     {
         public SType Type { get; protected set; }
         public abstract string ToString(int deep);
-        private static IEnumerable<SExpr> ParseImpl(IEnumerator<MyToken> input, bool isTopLevel = true)
+        private static IEnumerable<SExpr> ParseImpl(IEnumerator<Token> input, bool isTopLevel = true)
         {
             while (true)
             {
@@ -21,19 +22,19 @@ namespace SParser
                     if (isTopLevel) yield break;
                     else throw new ArgumentException();
                 }
-                MyToken current = input.Current;
+                Token current = input.Current;
                 if (!isTopLevel && current.Class == "closing-bracket")
                     yield break;
                 else if (current.Class == "atom")
                     yield return new SAtom(current.Text);
                 else if (current.Class == "str-atom")
-                    yield return new SString(((StrToken)current).Value);
+                    yield return new SString(((SStrToken)current).Value);
                 else if (current.Class == "opening-bracket")
                     yield return new SList(ParseImpl(input, false));
             }
         }
 
-        public static IEnumerable<SExpr> Parse(IEnumerable<MyToken> input)
+        public static IEnumerable<SExpr> Parse(IEnumerable<Token> input)
         {
             var en = input.GetEnumerator();
             return ParseImpl(en);
