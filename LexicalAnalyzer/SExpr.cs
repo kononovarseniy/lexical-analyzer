@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using LexicalAnalyzer;
 
-namespace SParser
+namespace LexicalAnalyzer
 {
-    enum SType { List, Atom, Srting }
-    abstract class SExpr
+    internal enum SType { List, Atom, Srting }
+
+    internal abstract class SExpr
     {
         public SType Type { get; protected set; }
         public abstract string ToString(int deep);
@@ -40,7 +38,8 @@ namespace SParser
             return ParseImpl(en);
         }
     }
-    class SAtom : SExpr
+
+    internal class SAtom : SExpr
     {
         public string Name;
         public SAtom(string name)
@@ -51,14 +50,16 @@ namespace SParser
         public override string ToString(int deep) => new string(' ', deep * 4) + Name;
         public override string ToString() => Name;
     }
-    class SString : SAtom
+
+    internal class SString : SAtom
     {
         public SString(string name) : base(name)
         {
             Type = SType.Srting;
         }
     }
-    class SList : SExpr, IEnumerable<SExpr>
+
+    internal class SList : SExpr, IEnumerable<SExpr>
     {
         public List<SExpr> Children;
 

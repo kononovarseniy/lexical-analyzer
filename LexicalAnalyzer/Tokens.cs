@@ -41,6 +41,5 @@ namespace LexicalAnalyzer
             token.SetText(sourceString.Substring(lexeme.Start, lexeme.Length));
             return token;
         }
-        public override string ToString() => $"\"{Text}\"";
     }
 }

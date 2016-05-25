@@ -112,11 +112,14 @@ namespace LexicalAnalyzer
             }
         }
 
-        public static IEnumerable<Lexeme> GetTokens(IEnumerable<Lexeme> lexemes, Func<Lexeme, IEnumerable<Lexeme>> evaluator)
+        public static IEnumerable<Lexeme> Evaluate(IEnumerable<Lexeme> lexemes, Func<Lexeme, IEnumerable<Lexeme>> evaluator)
         {
             foreach (var lex in lexemes)
                 foreach (var tok in evaluator(lex))
                     yield return tok;
         }
+
+        public IEnumerable<Lexeme> GetLexemesAndEvaluate(IEnumerable<char> input, Func<Lexeme, IEnumerable<Lexeme>> evaluator) =>
+            Evaluate(GetLexemes(input), evaluator);
     }
 }

@@ -1,13 +1,9 @@
-﻿using LexicalAnalyzer;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace SParser
+namespace LexicalAnalyzer
 {
-    class FsmBuilder
+    internal class FsmBuilder
     {
         private class FsmPreState : FsmState
         {
@@ -52,7 +48,7 @@ namespace SParser
             }
             return id;
         }
-        
+
         private void CreateTransition(FsmPreState state, SExpr expr)
         {
             if (expr.Type != SType.List)
