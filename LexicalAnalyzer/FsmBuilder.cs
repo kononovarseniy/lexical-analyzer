@@ -5,13 +5,13 @@ namespace LexicalAnalyzer
 {
     internal class FsmBuilder
     {
-        private class FsmPreState : FsmState
+        private class FsmPreState : FsmNode
         {
             public List<KeyValuePair<string, int>> UnresolvedTransitions = new List<KeyValuePair<string, int>>();
             public FsmPreState(string lexClass, bool final) : base(lexClass, final) { }
-            public FsmState ToFsmState()
+            public FsmNode ToFsmState()
             {
-                return new FsmState(LexemeClass, Final);
+                return new FsmNode(LexemeClass, Final);
             }
         }
         private const string FinAtomName = "FIN";
@@ -21,7 +21,7 @@ namespace LexicalAnalyzer
         private int IdCounter = 0;
         private Dictionary<string, int> LabelIdMap = new Dictionary<string, int>(StringComparer.InvariantCultureIgnoreCase);
         private Dictionary<int, FsmPreState> IdPreStateMap = new Dictionary<int, FsmPreState>();
-        private Dictionary<int, FsmState> IdStateMap = new Dictionary<int, FsmState>();
+        private Dictionary<int, FsmNode> IdStateMap = new Dictionary<int, FsmNode>();
 
         private void Reset()
         {
@@ -117,9 +117,9 @@ namespace LexicalAnalyzer
                 throw new ArgumentException();
         }
 
-        private FsmState ResolveState(int id)
+        private FsmNode ResolveState(int id)
         {
-            FsmState st;
+            FsmNode st;
             if (!IdStateMap.TryGetValue(id, out st))
             {
                 FsmPreState preSt = IdPreStateMap[id];
@@ -127,14 +127,14 @@ namespace LexicalAnalyzer
                 IdStateMap.Add(id, st);
                 foreach (var tr in preSt.UnresolvedTransitions)
                 {
-                    FsmState st2 = ResolveState(tr.Value);
+                    FsmNode st2 = ResolveState(tr.Value);
                     st.Add(tr.Key, st2);
                 }
             }
             return st;
         }
 
-        public FsmState BuildFsm(SList rules)
+        public FsmNode BuildFsm(SList rules)
         {
             Reset();
             foreach (var list in rules)

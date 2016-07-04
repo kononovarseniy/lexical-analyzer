@@ -24,18 +24,18 @@ namespace LexicalAnalyzer
         /// <returns></returns>
         private static Fsm GetRulesDescriptionLanguageLexer()
         {
-            FsmState space = new FsmState("space", true);
+            FsmNode space = new FsmNode("space", true);
             space.Add(@"\s", space);
 
-            FsmState atom = new FsmState("atom", true);
+            FsmNode atom = new FsmNode("atom", true);
             atom.Add(@"[^\s()""]", atom);
 
-            FsmState str = new FsmState("str-atom");
+            FsmNode str = new FsmNode("str-atom");
             str.Add(@"[^""]", str);
-            str.Add(@"""", new FsmState(true) { { @"""", str } });
-            FsmState first = new FsmState() {
-                                 { @"(", new FsmState("opening-bracket", true) },
-                                 { @")", new FsmState("closing-bracket", true) },
+            str.Add(@"""", new FsmNode(true) { { @"""", str } });
+            FsmNode first = new FsmNode() {
+                                 { @"(", new FsmNode("opening-bracket", true) },
+                                 { @")", new FsmNode("closing-bracket", true) },
                                  { @"[^\s()""]", atom },
                                  { @"\s", space },
                                  { @"""", str }

@@ -7,28 +7,137 @@ using System.Threading.Tasks;
 
 namespace LexicalAnalyzer
 {
-    public class FsmState : IEnumerable<KeyValuePair<string, FsmState>>
+    public delegate IEnumerable<Lexeme> Evaluator(Lexeme lexeme);
+    public class Block : IEnumerable<Lexeme>
+    {
+        private readonly List<Lexeme> Lexemes;
+
+        public FsmStatus EndStatus { get; private set; }
+        public int Position { get; private set; }
+        public int BlockLength { get; private set; }
+
+        public Block(FsmStatus status, IEnumerable<char> input, int blockLength, Evaluator evaluator = null)
+        {
+            if (status == null)
+                throw new ArgumentNullException(nameof(status));
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+
+            status = status.Clone();
+
+            Lexemes = new List<Lexeme>();
+            Position = status.Position;
+            BlockLength = blockLength;
+            EndStatus = status;
+
+            int countdown = blockLength;
+            foreach (var ch in input)
+            {
+                if (countdown-- == 0) break;
+                Lexeme lex = Fsm.HandleChar(ch, status);
+                if (lex != null)
+                {
+                    if (evaluator != null)
+                        Lexemes.AddRange(evaluator(lex));
+                    else
+                        Lexemes.Add(lex);
+                }
+                status.Position++;
+            }
+            if (status.Lexeme.Length != 0)
+            {
+                Lexeme lex = status.Lexeme.Clone();
+
+                if (evaluator != null)
+                    Lexemes.AddRange(evaluator(lex));
+                else
+                    Lexemes.Add(lex);
+            }
+        }
+
+        public Lexeme this[int index]
+        {
+            get
+            {
+                return Lexemes[index];
+            }
+        }
+        
+        public int Count
+        {
+            get
+            {
+                return Lexemes.Count;
+            }
+        }
+        
+        public IEnumerator<Lexeme> GetEnumerator()
+        {
+            return Lexemes.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return Lexemes.GetEnumerator();
+        }
+    }
+
+    public class FsmStatus
+    {
+        public Fsm Machine { get; private set; }
+        public FsmNode Node { get; set; }
+        public Lexeme Lexeme { get; set; }
+        public bool ErrorFlag { get; set; }
+        public int Position { get; set; }
+
+        private FsmStatus() { }
+        public FsmStatus(Fsm machine, int position = 0)
+        {
+            Machine = machine;
+            Node = machine.FirstState;
+            Position = position;
+            Lexeme = new Lexeme();
+        }
+        
+        public void Reset()
+        {
+            Node = Machine.FirstState;
+            Lexeme = new Lexeme(Position);
+            ErrorFlag = false;
+        }
+
+        public FsmStatus Clone() => new FsmStatus()
+        {
+            Machine = Machine,
+            Node = Node,
+            Lexeme = Lexeme,
+            ErrorFlag = ErrorFlag,
+            Position = Position
+        };
+    }
+
+    public class FsmNode : IEnumerable<KeyValuePair<string, FsmNode>>
     {
         public string LexemeClass = null;
         public bool Final = false;
-        public List<KeyValuePair<string, FsmState>> Transitions = new List<KeyValuePair<string, FsmState>>();
+        public List<KeyValuePair<string, FsmNode>> Transitions = new List<KeyValuePair<string, FsmNode>>();
 
-        public FsmState(string lexClass, bool final)
+        public FsmNode(string lexClass, bool final)
         {
             LexemeClass = lexClass;
             Final = final;
         }
-        public FsmState(string lexClass) : this(lexClass, false) { }
-        public FsmState(bool final) : this(null, final) { }
-        public FsmState() : this(null, false) { }
+        public FsmNode(string lexClass) : this(lexClass, false) { }
+        public FsmNode(bool final) : this(null, final) { }
+        public FsmNode() : this(null, false) { }
 
         public bool ContainsState(char ch)
         {
-            FsmState unused;
+            FsmNode unused;
             return TryGetState(ch, out unused);
         }
 
-        public bool TryGetState(char ch, out FsmState state)
+        public bool TryGetState(char ch, out FsmNode state)
         {
             state = null;
             foreach (var tr in Transitions)
@@ -40,32 +149,33 @@ namespace LexicalAnalyzer
             return false;
         }
         
-        public void Add(string key, FsmState value)
+        public void Add(string key, FsmNode value)
         {
-            Transitions.Add(new KeyValuePair<string, FsmState>(key, value));
+            Transitions.Add(new KeyValuePair<string, FsmNode>(key, value));
         }
 
-        public IEnumerator<KeyValuePair<string, FsmState>> GetEnumerator()
+        public IEnumerator<KeyValuePair<string, FsmNode>> GetEnumerator()
         {
-            return ((IEnumerable<KeyValuePair<string, FsmState>>)Transitions).GetEnumerator();
+            return ((IEnumerable<KeyValuePair<string, FsmNode>>)Transitions).GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return ((IEnumerable<KeyValuePair<string, FsmState>>)Transitions).GetEnumerator();
+            return ((IEnumerable<KeyValuePair<string, FsmNode>>)Transitions).GetEnumerator();
         }
     }
     public class Fsm
     {
-        public FsmState FirstState;
+        public FsmNode FirstState;
 
+        [Obsolete]
         public IEnumerable<Lexeme> GetLexemes(IEnumerable<char> input)
         {
             IEnumerator<char> en = input.GetEnumerator();
             int pos = 0;
             Lexeme lex = new Lexeme();
             bool complited = false;
-            FsmState state = FirstState;
+            FsmNode state = FirstState;
             bool doNotMove = false;
             while (doNotMove || en.MoveNext())
             {
@@ -112,14 +222,74 @@ namespace LexicalAnalyzer
             }
         }
 
-        public static IEnumerable<Lexeme> Evaluate(IEnumerable<Lexeme> lexemes, Func<Lexeme, IEnumerable<Lexeme>> evaluator)
+        [Obsolete]
+        // TODO: Evaluate method.
+        public static IEnumerable<Lexeme> Evaluate(IEnumerable<Lexeme> lexemes, Evaluator evaluator)
         {
             foreach (var lex in lexemes)
                 foreach (var tok in evaluator(lex))
                     yield return tok;
         }
 
-        public IEnumerable<Lexeme> GetLexemesAndEvaluate(IEnumerable<char> input, Func<Lexeme, IEnumerable<Lexeme>> evaluator) =>
+        [Obsolete]
+        // TODO: GetLexemesAndEvaluate method.
+        public IEnumerable<Lexeme> GetLexemesAndEvaluate(IEnumerable<char> input, Evaluator evaluator) =>
             Evaluate(GetLexemes(input), evaluator);
+
+        public static Lexeme HandleChar(char input, FsmStatus status)
+        {
+            Lexeme res = HandleCharImpl(input, status);
+            if (res != null)
+            {
+                status.Reset();
+                HandleCharImpl(input, status);
+            }
+            return res;
+        }
+        // При возвращении результата отличного от null
+        // вызывающй обязан сбросить параметры: node, lex, errorFlag
+        // и повторить вызов HandleCharImpl при этом вернет null.
+        private static Lexeme HandleCharImpl(char input, FsmStatus status)
+        {
+            FsmNode nextNode;
+            // Если существует переход из текущего состояния.
+            if (status.Node.TryGetState(input, out nextNode))
+            {
+                // Если до этого накапливалась ошибка сбросить накопленное.
+                // (Вместе с установкой errorFlag сбрасывается состояние)
+                if (status.ErrorFlag)
+                {
+                    return status.Lexeme;
+                }
+                // Иначе продолжить накопление лексемы.
+                // И перейти в следующее состойние.
+                else
+                {
+                    status.Lexeme.Length++;
+                    if (nextNode.LexemeClass != null)
+                        status.Lexeme.Class = nextNode.LexemeClass;
+                    status.Lexeme.Complited = nextNode.Final;
+                    status.Node = nextNode;
+                }
+            }
+            // Если перехода не существует.
+            else
+            {
+                // Если лексема новая
+                // или ошибка уже накапливается.
+                if (status.Lexeme.Length == 0 || status.ErrorFlag)
+                {
+                    status.ErrorFlag = true;
+                    status.Lexeme.Length++;
+                }
+                // Если начато накопление лексемы
+                // и лексема не "ошибка".
+                else
+                {
+                    return status.Lexeme;
+                }
+            }
+            return null;
+        }
     }
 }
