@@ -12,9 +12,13 @@ namespace LexicalAnalyzer
     {
         private readonly List<Lexeme> Lexemes;
 
+        public FsmStatus StartStatus { get; private set; }
         public FsmStatus EndStatus { get; private set; }
+        public IEnumerable<char> Input { get; private set; }
         public int Position { get; private set; }
         public int BlockLength { get; private set; }
+        public Evaluator Evaluator { get; private set; }
+        public bool Analysed { get; private set; }
 
         public Block(FsmStatus status, IEnumerable<char> input, int blockLength, Evaluator evaluator = null)
         {
@@ -23,36 +27,45 @@ namespace LexicalAnalyzer
             if (input == null)
                 throw new ArgumentNullException(nameof(input));
 
-            status = status.Clone();
-
-            Lexemes = new List<Lexeme>();
+            StartStatus = status.Clone();
+            EndStatus = null;
+            Input = input;
             Position = status.Position;
             BlockLength = blockLength;
-            EndStatus = status;
+            Evaluator = evaluator;
+            Analysed = false;
 
-            int countdown = blockLength;
-            foreach (var ch in input)
+            Lexemes = new List<Lexeme>();
+        }
+
+        public void ExecuteAnalysis()
+        {
+            EndStatus = StartStatus.Clone();
+
+            int countdown = BlockLength;
+            foreach (var ch in Input)
             {
                 if (countdown-- == 0) break;
-                Lexeme lex = Fsm.HandleChar(ch, status);
+                Lexeme lex = Fsm.HandleChar(ch, EndStatus);
                 if (lex != null)
                 {
-                    if (evaluator != null)
-                        Lexemes.AddRange(evaluator(lex));
+                    if (Evaluator != null)
+                        Lexemes.AddRange(Evaluator(lex));
                     else
                         Lexemes.Add(lex);
                 }
-                status.Position++;
+                EndStatus.Position++;
             }
-            if (status.Lexeme.Length != 0)
+            if (EndStatus.Lexeme.Length != 0)
             {
-                Lexeme lex = status.Lexeme.Clone();
+                Lexeme lex = EndStatus.Lexeme.Clone();
 
-                if (evaluator != null)
-                    Lexemes.AddRange(evaluator(lex));
+                if (Evaluator != null)
+                    Lexemes.AddRange(Evaluator(lex));
                 else
                     Lexemes.Add(lex);
             }
+            Analysed = true;
         }
 
         public Lexeme this[int index]

@@ -90,6 +90,7 @@ namespace SParser
                     input: lines[i],
                     blockLength: lines[i].Length,
                     evaluator: evaluator);
+                blocks[i].ExecuteAnalysis();
                 status = blocks[i].EndStatus;
                 Output(blocks[i]);
             }
