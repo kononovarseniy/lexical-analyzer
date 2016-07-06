@@ -86,7 +86,7 @@ namespace LexicalAnalyzer
         {
             Machine = Machine,
             Node = Node,
-            Lexeme = Lexeme,
+            Lexeme = Lexeme.Clone(),
             ErrorFlag = ErrorFlag,
             Position = Position
         };
@@ -216,7 +216,7 @@ namespace LexicalAnalyzer
         {
             foreach (var ch in input)
             {
-                Lexeme lex = Fsm.HandleChar(ch, status);
+                Lexeme lex = HandleChar(ch, status);
                 if (lex != null)
                 {
                     yield return lex;
