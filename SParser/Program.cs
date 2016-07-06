@@ -42,7 +42,10 @@ namespace SParser
                 prev = pos + nl.Length;
                 pos = str.IndexOf(nl, prev);
             }
-            lines.Add(str.Substring(prev));
+            if (prev < str.Length - 1)
+            {
+                lines.Add(str.Substring(prev));
+            }
             return lines.ToArray();
         }
         static void Main(string[] args)
@@ -81,18 +84,16 @@ namespace SParser
 ) aaa";
 
             string[] lines = GetLines(input);
-            Block[] blocks = new Block[lines.Length];
+            LexerBlock[] lexLines = new LexerBlock[lines.Length];
+            for (int i = 0; i < lines.Length; i++)
+            {
+                lexLines[i] = new LexerBlock(lexer, lines[i], evaluator);
+            }
             FsmStatus status = new FsmStatus(lexer);
             for (int i = 0; i < lines.Length; i++)
             {
-                blocks[i] = new Block(
-                    status: status,
-                    input: lines[i],
-                    blockLength: lines[i].Length,
-                    evaluator: evaluator);
-                blocks[i].ExecuteAnalysis();
-                status = blocks[i].EndStatus;
-                Output(blocks[i]);
+                status = lexLines[i].ExecuteAnalysis(status);
+                Output(lexLines[i]);
             }
             Console.ReadLine();
         }

@@ -7,83 +7,44 @@ using System.Threading.Tasks;
 
 namespace LexicalAnalyzer
 {
-    public delegate IEnumerable<Lexeme> Evaluator(Lexeme lexeme);
-    public class Block : IEnumerable<Lexeme>
+    public class LexerBlock : IEnumerable<Lexeme>
     {
-        private readonly List<Lexeme> Lexemes;
-
-        public FsmStatus StartStatus { get; private set; }
-        public FsmStatus EndStatus { get; private set; }
+        private List<Lexeme> Lexemes;
+        public Fsm Lexer { get; private set; }
         public IEnumerable<char> Input { get; private set; }
-        public int Position { get; private set; }
-        public int BlockLength { get; private set; }
+        public FsmStatus EndStatus { get; private set; }
         public Evaluator Evaluator { get; private set; }
-        public bool Analysed { get; private set; }
 
-        public Block(FsmStatus status, IEnumerable<char> input, int blockLength, Evaluator evaluator = null)
+        public LexerBlock(Fsm lexer, IEnumerable<char> input, Evaluator evaluator = null)
         {
-            if (status == null)
-                throw new ArgumentNullException(nameof(status));
+            if (lexer == null)
+                throw new ArgumentNullException(nameof(lexer));
             if (input == null)
                 throw new ArgumentNullException(nameof(input));
-
-            StartStatus = status.Clone();
-            EndStatus = null;
+            Lexer = lexer;
             Input = input;
-            Position = status.Position;
-            BlockLength = blockLength;
+            EndStatus = null;
             Evaluator = evaluator;
-            Analysed = false;
+        }
 
+        public FsmStatus ExecuteAnalysis(FsmStatus startStatus)
+        {
+            EndStatus = startStatus.Clone();
+            var lexemesTemp = Lexer.GetLexemes(Input, EndStatus);
             Lexemes = new List<Lexeme>();
+            if (Evaluator != null)
+            {
+                foreach (var lex in lexemesTemp)
+                    foreach (var tok in Evaluator(lex))
+                        Lexemes.Add(tok);
+            }
+            else
+            {
+                Lexemes = lexemesTemp.ToList();
+            }
+            return EndStatus;
         }
 
-        public void ExecuteAnalysis()
-        {
-            EndStatus = StartStatus.Clone();
-
-            int countdown = BlockLength;
-            foreach (var ch in Input)
-            {
-                if (countdown-- == 0) break;
-                Lexeme lex = Fsm.HandleChar(ch, EndStatus);
-                if (lex != null)
-                {
-                    if (Evaluator != null)
-                        Lexemes.AddRange(Evaluator(lex));
-                    else
-                        Lexemes.Add(lex);
-                }
-                EndStatus.Position++;
-            }
-            if (EndStatus.Lexeme.Length != 0)
-            {
-                Lexeme lex = EndStatus.Lexeme.Clone();
-
-                if (Evaluator != null)
-                    Lexemes.AddRange(Evaluator(lex));
-                else
-                    Lexemes.Add(lex);
-            }
-            Analysed = true;
-        }
-
-        public Lexeme this[int index]
-        {
-            get
-            {
-                return Lexemes[index];
-            }
-        }
-        
-        public int Count
-        {
-            get
-            {
-                return Lexemes.Count;
-            }
-        }
-        
         public IEnumerator<Lexeme> GetEnumerator()
         {
             return Lexemes.GetEnumerator();
@@ -94,6 +55,8 @@ namespace LexicalAnalyzer
             return Lexemes.GetEnumerator();
         }
     }
+
+    public delegate IEnumerable<Lexeme> Evaluator(Lexeme lexeme);
 
     public class FsmStatus
     {
@@ -248,6 +211,24 @@ namespace LexicalAnalyzer
         // TODO: GetLexemesAndEvaluate method.
         public IEnumerable<Lexeme> GetLexemesAndEvaluate(IEnumerable<char> input, Evaluator evaluator) =>
             Evaluate(GetLexemes(input), evaluator);
+
+        public IEnumerable<Lexeme> GetLexemes(IEnumerable<char> input, FsmStatus status)
+        {
+            foreach (var ch in input)
+            {
+                Lexeme lex = Fsm.HandleChar(ch, status);
+                if (lex != null)
+                {
+                    yield return lex;
+                }
+                status.Position++;
+            }
+            if (status.Lexeme.Length != 0)
+            {
+                Lexeme lex = status.Lexeme.Clone();
+                yield return lex;
+            }
+        }
 
         public static Lexeme HandleChar(char input, FsmStatus status)
         {

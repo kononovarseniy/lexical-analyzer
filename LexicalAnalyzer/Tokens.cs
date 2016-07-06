@@ -12,6 +12,7 @@ namespace LexicalAnalyzer
         public int Length;
         public bool Complited;
         public string Class;
+
         public Lexeme(int start = 0)
         {
             Start = start;
