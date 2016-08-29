@@ -46,7 +46,7 @@ namespace LexicalAnalyzer
         public static Fsm CreateFsm(string rules)
         {
             Fsm lexer = GetRulesDescriptionLanguageLexer();
-            var tokens = lexer.GetLexemesAndEvaluate(rules, (lex) =>
+            var block = new LexerBlock(lexer, rules, (lex) =>
             {
                 Lexeme res = null;
                 if (lex.Class == "space")
@@ -61,7 +61,8 @@ namespace LexicalAnalyzer
                 if (res != null) list.Add(res);
                 return list;
             });
-            var sList = new SList(SExpr.Parse(tokens.Select(t => t as Token)));
+            block.ExecuteAnalysis();
+            var sList = new SList(SExpr.Parse(block.Select(t => t as Token)));
             return new Fsm() { FirstState = Builder.BuildFsm(sList) };
         }
     }

@@ -27,6 +27,9 @@ namespace LexicalAnalyzer
             Evaluator = evaluator;
         }
 
+        public FsmStatus ExecuteAnalysis() =>
+            ExecuteAnalysis(new FsmStatus(Lexer));
+
         public FsmStatus ExecuteAnalysis(FsmStatus startStatus)
         {
             EndStatus = startStatus.Clone();
@@ -143,75 +146,7 @@ namespace LexicalAnalyzer
     public class Fsm
     {
         public FsmNode FirstState;
-
-        [Obsolete]
-        public IEnumerable<Lexeme> GetLexemes(IEnumerable<char> input)
-        {
-            IEnumerator<char> en = input.GetEnumerator();
-            int pos = 0;
-            Lexeme lex = new Lexeme();
-            bool complited = false;
-            FsmNode state = FirstState;
-            bool doNotMove = false;
-            while (doNotMove || en.MoveNext())
-            {
-                doNotMove = false;
-                char ch = en.Current;
-                if (state.TryGetState(ch, out state))
-                {
-                    if (state.LexemeClass != null)
-                        lex.Class = state.LexemeClass;
-                    complited = state.Final;
-                }
-                else
-                {
-                    state = FirstState;
-                    if (lex.Class != null && complited)
-                        doNotMove = true;
-                    else
-                    {
-                        lex.Class = null;
-                        do
-                        {
-                            if (state.ContainsState(en.Current))
-                            {
-                                doNotMove = true;
-                                break;
-                            }
-                            pos++;
-                        } while (en.MoveNext());
-                    }
-                    lex.Length = pos - lex.Start;
-                    yield return lex;
-                    lex = new Lexeme(pos);
-                    complited = false;
-                    continue;
-                }
-                pos++;
-            }
-            int len = pos - lex.Start;
-            if (len != 0)
-            {
-                lex.Class = complited ? lex.Class : null;
-                lex.Length = len;
-                yield return lex;
-            }
-        }
-
-        [Obsolete]
-        // TODO: Evaluate method.
-        public static IEnumerable<Lexeme> Evaluate(IEnumerable<Lexeme> lexemes, Evaluator evaluator)
-        {
-            foreach (var lex in lexemes)
-                foreach (var tok in evaluator(lex))
-                    yield return tok;
-        }
-
-        [Obsolete]
-        // TODO: GetLexemesAndEvaluate method.
-        public IEnumerable<Lexeme> GetLexemesAndEvaluate(IEnumerable<char> input, Evaluator evaluator) =>
-            Evaluate(GetLexemes(input), evaluator);
-
+        
         public IEnumerable<Lexeme> GetLexemes(IEnumerable<char> input, FsmStatus status)
         {
             foreach (var ch in input)

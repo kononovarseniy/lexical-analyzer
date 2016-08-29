@@ -69,9 +69,7 @@ namespace SParser
                 if (res != null) list.Add(res);
                 return list;
             };
-            // Get lexemes and evaluate them
-            var tokens = lexer.GetLexemesAndEvaluate(input, evaluator);
-            Output(tokens);
+            // And analyze it
             Console.WriteLine("========");
             Console.WriteLine("========");
             Console.WriteLine("========");
@@ -81,19 +79,24 @@ namespace SParser
     aaa
     2
     3
+    ""asd
+    zxc""
 ) aaa";
 
             string[] lines = GetLines(input);
+            // Create blocks
             LexerBlock[] lexLines = new LexerBlock[lines.Length];
             for (int i = 0; i < lines.Length; i++)
             {
                 lexLines[i] = new LexerBlock(lexer, lines[i], evaluator);
             }
+            // Execute analisis
             FsmStatus status = new FsmStatus(lexer);
             for (int i = 0; i < lines.Length; i++)
             {
                 status = lexLines[i].ExecuteAnalysis(status);
                 Output(lexLines[i]);
+                Console.WriteLine("---");
             }
             Console.ReadLine();
         }
