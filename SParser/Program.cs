@@ -70,6 +70,9 @@ namespace SParser
                 return list;
             };
             // And analyze it
+            var block = new LexerBlock(lexer, input, evaluator);
+            block.ExecuteAnalysis();
+            Output(block);
             Console.WriteLine("========");
             Console.WriteLine("========");
             Console.WriteLine("========");
