@@ -28,7 +28,7 @@ namespace LexicalAnalyzer
         }
 
         public FsmStatus ExecuteAnalysis() =>
-            ExecuteAnalysis(new FsmStatus(Lexer));
+            ExecuteAnalysis(Lexer.InitialStatus);
 
         public FsmStatus ExecuteAnalysis(FsmStatus startStatus)
         {
@@ -63,31 +63,31 @@ namespace LexicalAnalyzer
 
     public class FsmStatus
     {
-        public Fsm Machine { get; private set; }
+        public FsmNode InitialNode { get; private set; }
         public FsmNode Node { get; set; }
         public Lexeme Lexeme { get; set; }
         public bool ErrorFlag { get; set; }
         public int Position { get; set; }
 
         private FsmStatus() { }
-        public FsmStatus(Fsm machine, int position = 0)
+        public FsmStatus(FsmNode initialNode, int position = 0)
         {
-            Machine = machine;
-            Node = machine.FirstState;
+            InitialNode = initialNode;
+            Node = initialNode;
             Position = position;
             Lexeme = new Lexeme();
         }
         
         public void Reset()
         {
-            Node = Machine.FirstState;
+            Node = InitialNode;
             Lexeme = new Lexeme(Position);
             ErrorFlag = false;
         }
 
         public FsmStatus Clone() => new FsmStatus()
         {
-            Machine = Machine,
+            InitialNode = InitialNode,
             Node = Node,
             Lexeme = Lexeme.Clone(),
             ErrorFlag = ErrorFlag,
@@ -143,9 +143,12 @@ namespace LexicalAnalyzer
             return ((IEnumerable<KeyValuePair<string, FsmNode>>)Transitions).GetEnumerator();
         }
     }
+
     public class Fsm
     {
-        public FsmNode FirstState;
+        public FsmNode FirstNode;
+
+        public FsmStatus InitialStatus => new FsmStatus(FirstNode);
         
         public IEnumerable<Lexeme> GetLexemes(IEnumerable<char> input, FsmStatus status)
         {

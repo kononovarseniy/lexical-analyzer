@@ -94,7 +94,7 @@ namespace SParser
                 lexLines[i] = new LexerBlock(lexer, lines[i], evaluator);
             }
             // Execute analisis
-            FsmStatus status = new FsmStatus(lexer);
+            FsmStatus status = lexer.InitialStatus;
             for (int i = 0; i < lines.Length; i++)
             {
                 status = lexLines[i].ExecuteAnalysis(status);

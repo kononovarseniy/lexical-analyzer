@@ -40,7 +40,7 @@ namespace LexicalAnalyzer
                                  { @"\s", space },
                                  { @"""", str }
                              };
-            return new Fsm() { FirstState = first };
+            return new Fsm() { FirstNode = first };
         }
         private static FsmBuilder Builder = new FsmBuilder();
         public static Fsm CreateFsm(string rules)
@@ -63,7 +63,7 @@ namespace LexicalAnalyzer
             });
             block.ExecuteAnalysis();
             var sList = new SList(SExpr.Parse(block.Select(t => t as Token)));
-            return new Fsm() { FirstState = Builder.BuildFsm(sList) };
+            return new Fsm() { FirstNode = Builder.BuildFsm(sList) };
         }
     }
 }
