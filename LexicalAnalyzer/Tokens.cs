@@ -10,18 +10,28 @@ namespace LexicalAnalyzer
     {
         public int Start;
         public int Length;
+        public bool Complited;
         public string Class;
+
         public Lexeme(int start = 0)
         {
             Start = start;
             Length = 0;
             Class = null;
+            Complited = false;
         }
         public void CopyFrom(Lexeme lexeme)
         {
             Start = lexeme.Start;
             Length = lexeme.Length;
             Class = lexeme.Class;
+            Complited = lexeme.Complited;
+        }
+        public Lexeme Clone()
+        {
+            var lex = new Lexeme();
+            lex.CopyFrom(this);
+            return lex;
         }
         public TToken ToToken<TToken>(string sourceString) where TToken : Token, new() =>
             Token.FromLexeme<TToken>(this, sourceString);

@@ -1,0 +1,14 @@
+(root:
+    ("(" (: fin opening-bracket))
+    (")" (: fin closing-bracket))
+    ("[^a\s()""]" (atom: fin atom ("[^a\s()""]" atom:)))
+    ("\s" (space: fin space ("\s" space:)))
+    ("""" (str-atom: !fin str-atom
+              ("[^""]" str-atom:)
+              ("""" (: fin
+                        ("""" str-atom:)
+                    )
+              )
+          )
+    )
+)
