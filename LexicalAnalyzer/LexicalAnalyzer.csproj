@@ -45,9 +45,15 @@
     <Compile Include="FsmCreator.cs" />
     <Compile Include="OneCharRegex.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\IntSet.cs" />
+    <Compile Include="RegularExpressions\Regex.cs" />
+    <Compile Include="RegularExpressions\RegexChars.cs" />
+    <Compile Include="RegularExpressions\RegexTree.cs" />
+    <Compile Include="RegularExpressions\RegularGrammarFsmBuilder.cs" />
     <Compile Include="SExpr.cs" />
     <Compile Include="Tokens.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
