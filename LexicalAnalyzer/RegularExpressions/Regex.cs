@@ -21,6 +21,10 @@ namespace LexicalAnalyzer.RegularExpressions
         {
             throw new ArgumentException($"{ParsingErrorText} At char {pos}.");
         }
+        private static void ThrowParsingError()
+        {
+            throw new ArgumentException(ParsingErrorText);
+        }
         private static void ThrowUnexpectedEndOfLine()
         {
             throw new ArgumentException(UnexpectedEndOfLine);
@@ -101,11 +105,119 @@ namespace LexicalAnalyzer.RegularExpressions
             }
             return new IntSet(ch);
         }
-
-        public static RegexTree Compile(string pattern)
+        
+        private static int OperatorPriority(char op)
         {
+            if (op == '*' || op == '+' || op == '?')
+                return 3;
+            else if (op == ' ')
+                return 2;
+            else if (op == '|')
+                return 1;
+            else if (op == '(' || op == ')')
+                return 0;
+            else
+                throw new ArgumentException();
+        }
+        
+        private static void EvalOperator(Stack<RegexTree> values, char op)
+        {
+            if (op == '*')
+            {
+                if (values.Count < 1) ThrowParsingError();
+                values.Push(RegexTree.CreateIteration(values.Pop()));
+            }
+            else if (op == '+')
+            {
+                if (values.Count < 1) ThrowParsingError();
+                values.Push(RegexTree.CreatePositiveIteration(values.Pop()));
+            }
+            else if (op == '?')
+            {
+                if (values.Count < 1) ThrowParsingError();
+                values.Push(RegexTree.CreateOptional(values.Pop()));
+            }
+            else if (op == ' ')
+            {
+                if (values.Count < 2) ThrowParsingError();
+                var right = values.Pop();
+                var left = values.Pop();
+                values.Push(RegexTree.CreateSequence(left, right));
+            }
+            else if (op == '|')
+            {
+                if (values.Count < 2) ThrowParsingError();
+                var right = values.Pop();
+                var left = values.Pop();
+                values.Push(RegexTree.CreateAlternatives(left, right));
+            }
+        }
+
+        private static void FlushOperators(Stack<RegexTree> values, Stack<char> operators, int priority)
+        {
+            while (operators.Count > 0)
+            {
+                char op2 = operators.Peek();
+                if (OperatorPriority(op2) > priority)
+                    EvalOperator(values, operators.Pop());
+                else break;
+            }
+        }
+
+        private static void PushOperator(Stack<RegexTree> values, Stack<char> operators, char op)
+        {
+            FlushOperators(values, operators, OperatorPriority(op));
+            operators.Push(op);
+        }
+        
+        public static RegexTree Parse(string pattern)
+        {
+            Stack<RegexTree> values = new Stack<RegexTree>();
+            Stack<char> operators = new Stack<char>();
+
+            bool prevIsVal = false;
             int pos = 0;
-            return RegexTree.CreateValue(ParseCharClass(pattern, ref pos));
+            while (pos < pattern.Length)
+            {
+                bool isVal = false;
+                char ch = GetUnescapedChar(pattern, ref pos);
+                if (ch == '(')
+                {
+                    if (prevIsVal)
+                        PushOperator(values, operators, ' ');
+                    operators.Push('(');
+                }
+                else if (ch == ')')
+                {
+                    FlushOperators(values, operators, 0);
+                    if (operators.Count == 0)
+                        ThrowParsingError(pos);
+                    operators.Pop();
+                }
+                else if ("|*+?".IndexOf(ch) >= 0)
+                {
+                    PushOperator(values, operators, ch);
+                }
+                else
+                {
+                    pos--;
+                    isVal = true;
+                    IntSet val = ParseCharClass(pattern, ref pos);
+                    if (prevIsVal)
+                        PushOperator(values, operators, ' ');
+                    values.Push(RegexTree.CreateValue(val));
+                }
+                prevIsVal = isVal;
+            }
+            FlushOperators(values, operators, 0);
+
+            if (operators.Count > 0)
+                ThrowUnexpectedEndOfLine();
+
+            if (values.Count > 1)
+                ThrowParsingError();
+
+            return values.Pop();
         }
     }
 }

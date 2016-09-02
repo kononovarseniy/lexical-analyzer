@@ -12,37 +12,36 @@ namespace LexicalAnalyzer.RegularExpressions.Tests
     public class RegexTests
     {
         [TestMethod()]
-        public void CompileTest()
+        public void ParseTest()
         {
             Assert.AreEqual(Regex.WhiteSpaces,
-                Regex.Compile(@"\s").Value);
-
-            Assert.AreEqual(Regex.WhiteSpaces,
-                Regex.Compile(@"\s\D").Value);
+                Regex.Parse(@"\s").Value);
 
             Assert.AreEqual((Regex.WhiteSpaces | ~Regex.Digits),
-                Regex.Compile(@"[\s\D]").Value);
+                Regex.Parse(@"[\s\D]").Value);
 
             Assert.AreEqual(~(Regex.WhiteSpaces | ~Regex.Digits),
-                Regex.Compile(@"[^\s\D]").Value);
+                Regex.Parse(@"[^\s\D]").Value);
 
             Assert.AreEqual(~(Regex.WhiteSpaces | new IntSet('a', 'z')),
-                Regex.Compile(@"[^\sa-z]").Value);
+                Regex.Parse(@"[^\sa-z]").Value);
 
             Assert.AreEqual(IntSet.Empty,
-                Regex.Compile(@"[^\sa-z.]").Value);
+                Regex.Parse(@"[^\sa-z.]").Value);
 
             Assert.AreEqual(IntSet.All,
-                Regex.Compile(@"[\sa-z.]").Value);
+                Regex.Parse(@"[\sa-z.]").Value);
 
             Assert.AreEqual(new IntSet('\n', '\r'),
-                Regex.Compile(@"[\n-\r]").Value);
+                Regex.Parse(@"[\n-\r]").Value);
 
             Assert.AreEqual(new IntSet('\n', 'z'),
-                Regex.Compile(@"[\n-z]").Value);
+                Regex.Parse(@"[\n-z]").Value);
 
             Assert.AreEqual(new IntSet('-'),
-                Regex.Compile(@"[\--\-]").Value);
+                Regex.Parse(@"[\--\-]").Value);
+
+            var res = Regex.Parse(@"123\s|asd([^123]*|5)+");
 
             string[] errors =
             {
@@ -55,13 +54,25 @@ namespace LexicalAnalyzer.RegularExpressions.Tests
                 @"-",
                 @"a-",
                 @"[abc",
-                @"["
+                @"[",
+                @"*",
+                @"+",
+                @"*+?",
+                @"\s|",
+                @"\s?|",
+                @"|\s",
+                @"|",
+                @"||",
+                @")",
+                @"(",
+                @"\s?)",
+                @"(\s?",
             };
             foreach (var error in errors)
             {
                 try
                 {
-                    Regex.Compile(error);
+                    Regex.Parse(error);
                     Assert.Fail();
                 }
                 catch (ArgumentException) { }
