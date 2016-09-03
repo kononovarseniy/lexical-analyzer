@@ -7,8 +7,9 @@ using LexicalAnalyzer.Utils;
 
 namespace LexicalAnalyzer.RegularExpressions
 {
-    public partial class Regex
+    public partial class RegexParser
     {
+        #region Helpers
         private const string UnrecognizedEscapeSequenseText = "Unrecognized escape sequence.";
         private const string ParsingErrorText = "A regular expression parsing error occurred.";
         private const string UnexpectedEndOfLine = "Unexpected end of line.";
@@ -55,7 +56,8 @@ namespace LexicalAnalyzer.RegularExpressions
 
         private static char PeekChar(string str, int pos, out bool escaped) =>
             GetChar(str, ref pos, out escaped);
-        
+        #endregion
+
         private static IntSet ParseCharClass(string str, ref int pos)
         {
             bool escaped;
@@ -106,7 +108,7 @@ namespace LexicalAnalyzer.RegularExpressions
             return new IntSet(ch);
         }
         
-        private static int OperatorPriority(char op)
+        private static int GetPriority(char op)
         {
             if (op == '*' || op == '+' || op == '?')
                 return 3;
@@ -158,7 +160,7 @@ namespace LexicalAnalyzer.RegularExpressions
             while (operators.Count > 0)
             {
                 char op2 = operators.Peek();
-                if (OperatorPriority(op2) > priority)
+                if (GetPriority(op2) > priority)
                     EvalOperator(values, operators.Pop());
                 else break;
             }
@@ -166,7 +168,7 @@ namespace LexicalAnalyzer.RegularExpressions
 
         private static void PushOperator(Stack<RegexTree> values, Stack<char> operators, char op)
         {
-            FlushOperators(values, operators, OperatorPriority(op));
+            FlushOperators(values, operators, GetPriority(op));
             operators.Push(op);
         }
         

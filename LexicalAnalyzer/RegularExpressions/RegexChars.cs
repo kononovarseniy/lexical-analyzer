@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace LexicalAnalyzer.RegularExpressions
 {
-    public partial class Regex
+    public partial class RegexParser
     {
         private static readonly Dictionary<char, char> EscapeMap = new Dictionary<char, char>()
         {
@@ -630,7 +630,7 @@ namespace LexicalAnalyzer.RegularExpressions
 
         public static readonly IntSet DigitsAndLetters = Digits | Letters;
 
-        static Regex()
+        static RegexParser()
         {
             BuiltinCharClasses = new Dictionary<char, IntSet>()
             {

@@ -14,34 +14,34 @@ namespace LexicalAnalyzer.RegularExpressions.Tests
         [TestMethod()]
         public void ParseTest()
         {
-            Assert.AreEqual(Regex.WhiteSpaces,
-                Regex.Parse(@"\s").Value);
+            Assert.AreEqual(RegexParser.WhiteSpaces,
+                RegexParser.Parse(@"\s").Value);
 
-            Assert.AreEqual((Regex.WhiteSpaces | ~Regex.Digits),
-                Regex.Parse(@"[\s\D]").Value);
+            Assert.AreEqual((RegexParser.WhiteSpaces | ~RegexParser.Digits),
+                RegexParser.Parse(@"[\s\D]").Value);
 
-            Assert.AreEqual(~(Regex.WhiteSpaces | ~Regex.Digits),
-                Regex.Parse(@"[^\s\D]").Value);
+            Assert.AreEqual(~(RegexParser.WhiteSpaces | ~RegexParser.Digits),
+                RegexParser.Parse(@"[^\s\D]").Value);
 
-            Assert.AreEqual(~(Regex.WhiteSpaces | new IntSet('a', 'z')),
-                Regex.Parse(@"[^\sa-z]").Value);
+            Assert.AreEqual(~(RegexParser.WhiteSpaces | new IntSet('a', 'z')),
+                RegexParser.Parse(@"[^\sa-z]").Value);
 
             Assert.AreEqual(IntSet.Empty,
-                Regex.Parse(@"[^\sa-z.]").Value);
+                RegexParser.Parse(@"[^\sa-z.]").Value);
 
             Assert.AreEqual(IntSet.All,
-                Regex.Parse(@"[\sa-z.]").Value);
+                RegexParser.Parse(@"[\sa-z.]").Value);
 
             Assert.AreEqual(new IntSet('\n', '\r'),
-                Regex.Parse(@"[\n-\r]").Value);
+                RegexParser.Parse(@"[\n-\r]").Value);
 
             Assert.AreEqual(new IntSet('\n', 'z'),
-                Regex.Parse(@"[\n-z]").Value);
+                RegexParser.Parse(@"[\n-z]").Value);
 
             Assert.AreEqual(new IntSet('-'),
-                Regex.Parse(@"[\--\-]").Value);
+                RegexParser.Parse(@"[\--\-]").Value);
 
-            var res = Regex.Parse(@"123\s|asd([^123]*|5)+");
+            var res = RegexParser.Parse(@"123\s|asd([^123]*|5)+");
 
             string[] errors =
             {
@@ -72,7 +72,7 @@ namespace LexicalAnalyzer.RegularExpressions.Tests
             {
                 try
                 {
-                    Regex.Parse(error);
+                    RegexParser.Parse(error);
                     Assert.Fail();
                 }
                 catch (ArgumentException) { }
