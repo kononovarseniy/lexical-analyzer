@@ -56,7 +56,6 @@
     <Compile Include="RegularExpressions\RegexParser.cs" />
     <Compile Include="RegularExpressions\RegexChars.cs" />
     <Compile Include="RegularExpressions\RegexTree.cs" />
-    <Compile Include="RegularExpressions\RegularGrammarFsmBuilder.cs" />
     <Compile Include="SExpr.cs" />
     <Compile Include="Tokens.cs" />
   </ItemGroup>

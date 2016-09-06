@@ -12,7 +12,7 @@ namespace LexicalAnalyzer.FsmNS.Types
         public HashSet<int> FinalStates;
         public FsmTransition<TSymbol>[] Transitions;
 
-        public FsmInfo(TState[] states, HashSet<int> finalStates, FsmTransition<TSymbol>[] transitions)
+        public FsmInfo(TState[] states, FsmTransition<TSymbol>[] transitions, HashSet<int> finalStates)
         {
             States = states;
             FinalStates = finalStates;

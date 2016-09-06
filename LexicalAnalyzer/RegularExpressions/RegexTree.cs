@@ -1,4 +1,7 @@
-﻿using LexicalAnalyzer.Utils;
+﻿using LexicalAnalyzer.FsmNS.Builders;
+using LexicalAnalyzer.FsmNS.Types;
+using LexicalAnalyzer.Utils;
+using System;
 
 namespace LexicalAnalyzer.RegularExpressions
 {
@@ -58,5 +61,26 @@ namespace LexicalAnalyzer.RegularExpressions
             Left = tree,
             NodeType = RegexTreeNodeType.Optional
         };
+
+        public FsmInfo<TState, IntSet> ToFsm<TState>(NfaBuilder<TState, IntSet> builder)
+        {
+            switch (NodeType)
+            {
+                case RegexTreeNodeType.Value:
+                    return builder.Terminal(Value);
+                case RegexTreeNodeType.Alternatives:
+                    return builder.Alternatives(Left.ToFsm(builder), Right.ToFsm(builder));
+                case RegexTreeNodeType.Sequence:
+                    return builder.Sequence(Left.ToFsm(builder), Right.ToFsm(builder));
+                case RegexTreeNodeType.Iteration:
+                    return builder.Iteration(Left.ToFsm(builder));
+                case RegexTreeNodeType.PositiveIteration:
+                    return builder.PositiveIteration(Left.ToFsm(builder));
+                case RegexTreeNodeType.Optional:
+                    return builder.Optional(Left.ToFsm(builder));
+                default:
+                    throw new Exception("Bug.");
+            }
+        }
     }
 }

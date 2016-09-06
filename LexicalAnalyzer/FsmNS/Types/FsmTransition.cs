@@ -43,5 +43,31 @@ namespace LexicalAnalyzer.FsmNS.Types
             CreateTransitionsImpl(from, to, default(TSymbol), false);
         public static IEnumerable<FsmTransition<TSymbol>> CreateTransitions(IEnumerable<int> from, int to) =>
             CreateTransitionsImpl(from, to, default(TSymbol), false);
+
+        public static IEnumerable<FsmTransition<TSymbol>> ShiftTransitions(IEnumerable<FsmTransition<TSymbol>> transitions, int shift) =>
+            from t in transitions
+            select new FsmTransition<TSymbol>(
+                t.From + shift,
+                t.To + shift,
+                t.Symbol,
+                t.HasSymbol);
+
+        public override bool Equals(object obj)
+        {
+            var t = obj as FsmTransition<TSymbol>;
+            return t != null &&
+                t.From == From &&
+                t.To == To &&
+                t.HasSymbol == HasSymbol &&
+                (!HasSymbol || t.Symbol.Equals(Symbol));
+        }
+
+        public override int GetHashCode()
+        {
+            return From ^ To ^ HasSymbol.GetHashCode() ^ (HasSymbol ? Symbol.GetHashCode() : 0);
+        }
+        
+        public override string ToString() =>
+            $"{From}->{(HasSymbol ? $"({Symbol})" : "")}->{To}";
     }
 }
