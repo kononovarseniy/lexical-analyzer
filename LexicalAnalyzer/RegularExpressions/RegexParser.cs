@@ -177,15 +177,15 @@ namespace LexicalAnalyzer.RegularExpressions
             Stack<RegexTree> values = new Stack<RegexTree>();
             Stack<char> operators = new Stack<char>();
 
-            bool prevIsVal = false;
+            bool insertBefore = false;
             int pos = 0;
             while (pos < pattern.Length)
             {
-                bool isVal = false;
+                bool insertAfterPossible = false;
                 char ch = GetUnescapedChar(pattern, ref pos);
                 if (ch == '(')
                 {
-                    if (prevIsVal)
+                    if (insertBefore)
                         PushOperator(values, operators, ' ');
                     operators.Push('(');
                 }
@@ -195,21 +195,23 @@ namespace LexicalAnalyzer.RegularExpressions
                     if (operators.Count == 0)
                         ThrowParsingError(pos);
                     operators.Pop();
+                    insertAfterPossible = true;
                 }
                 else if ("|*+?".IndexOf(ch) >= 0)
                 {
                     PushOperator(values, operators, ch);
+                    insertAfterPossible = ch != '|';
                 }
                 else
                 {
                     pos--;
-                    isVal = true;
+                    insertAfterPossible = true;
                     IntSet val = ParseCharClass(pattern, ref pos);
-                    if (prevIsVal)
+                    if (insertBefore)
                         PushOperator(values, operators, ' ');
                     values.Push(RegexTree.CreateValue(val));
                 }
-                prevIsVal = isVal;
+                insertBefore = insertAfterPossible;
             }
             FlushOperators(values, operators, 0);
 

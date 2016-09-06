@@ -1,7 +1,12 @@
 ﻿using LexicalAnalyzer;
+using LexicalAnalyzer.FsmNS.Builders;
+using LexicalAnalyzer.FsmNS.Types;
+using LexicalAnalyzer.RegularExpressions;
+using LexicalAnalyzer.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace SParser
 {
@@ -48,6 +53,49 @@ namespace SParser
             }
             return lines.ToArray();
         }
+
+        static void PrintRegexTree(RegexTree tree, int ident = 0)
+        {
+            string space = new string(' ', ident);
+            Console.Write(space);
+            if (tree.NodeType == RegexTreeNodeType.Value)
+                Console.WriteLine(tree.Value);
+            else
+            {
+                Console.WriteLine(tree.NodeType);
+                PrintRegexTree(tree.Left, ident + 4);
+                if (tree.NodeType == RegexTreeNodeType.Alternatives ||
+                    tree.NodeType == RegexTreeNodeType.Sequence)
+                {
+                    PrintRegexTree(tree.Right, ident + 4);
+                }
+            }
+        }
+        static RegexTree ParseRegex(string pattern)
+        {
+            Console.WriteLine(pattern);
+            var tree = RegexParser.Parse(pattern);
+            PrintRegexTree(tree);
+            return tree;
+        }
+        static void PrintFsm<TState, TSymbol>(FsmInfo<TState, TSymbol> fsm)
+        {
+            Console.WriteLine($"States[{fsm.States.Length}]:");
+            for (int i = 0; i < fsm.States.Length; i++)
+                Console.WriteLine($"    #{i}\t{fsm.States[i]}\tFinal: {fsm.FinalStates.Contains(i)}");
+            Console.WriteLine($"Transitions[{fsm.Transitions.Length}]:");
+            foreach (var t in fsm.Transitions)
+                Console.WriteLine($"    {t}");
+        }
+        static FsmInfo<int, IntSet> BuildNfa(RegexTree tree)
+        {
+            int counter = 0;
+            var builder = new NfaBuilder<int, IntSet>(() => counter++);
+            var nfa = tree.ToFsm(builder);
+            PrintFsm(nfa);
+            return nfa;
+        }
+
         static void Main(string[] args)
         {
             // Load file
@@ -101,6 +149,12 @@ namespace SParser
                 Output(lexLines[i]);
                 Console.WriteLine("---");
             }
+
+            Console.WriteLine("Press enter to build nfa.");
+            Console.ReadLine();
+
+            var tree = ParseRegex("[0-9](a|(b*B)|c)?!+");
+            var nfa = BuildNfa(tree);
             Console.ReadLine();
         }
     }
