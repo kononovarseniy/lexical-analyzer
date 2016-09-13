@@ -155,6 +155,8 @@ namespace LexicalAnalyzer.Utils
             return edges.Aggregate(0, (acc, item) => acc ^ item);
         }
 
+        public IEnumerable<int> GetEdges() => edges.Select(it => it);
+
         public IEnumerator<IntSet> GetEnumerator()
         {
             var en = edges.GetEnumerator();

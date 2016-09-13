@@ -44,6 +44,9 @@ namespace LexicalAnalyzer.FsmNS.Types
         public static IEnumerable<FsmTransition<TSymbol>> CreateTransitions(IEnumerable<int> from, int to) =>
             CreateTransitionsImpl(from, to, default(TSymbol), false);
 
+        public static IEnumerable<FsmTransition<TSymbol>> CreateTransitions(int from, int to, IEnumerable<TSymbol> symbol) =>
+            symbol.Select(s => new FsmTransition<TSymbol>(from, to, s));
+
         public static IEnumerable<FsmTransition<TSymbol>> ShiftTransitions(IEnumerable<FsmTransition<TSymbol>> transitions, int shift) =>
             from t in transitions
             select new FsmTransition<TSymbol>(

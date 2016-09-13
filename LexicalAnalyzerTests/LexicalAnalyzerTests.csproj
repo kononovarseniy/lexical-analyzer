@@ -51,6 +51,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="FsmNS\Builders\AlphabetConverterTests.cs" />
     <Compile Include="FsmNS\Builders\NfaBuilderTests.cs" />
     <Compile Include="OneCharRegexTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
