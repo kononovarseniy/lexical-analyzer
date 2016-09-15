@@ -41,7 +41,9 @@ namespace LexicalAnalyzer.FsmNS.Builders
         /// Id of set that is absolute complement of union of all sets.
         /// </summary>
         public const int ComplementID = 0;
-        
+
+        public int Count { get; private set; }
+
         public AlphabetConverter(IEnumerable<IntSet> sets)
         {
             Initialize(sets);
@@ -158,6 +160,7 @@ namespace LexicalAnalyzer.FsmNS.Builders
             this.composition = map.ToDictionary(
                 kvp => kvp.Key,
                 kvp => composition[kvp.Value]);
+            Count = idCounter;
         }
 
         private static int? GetNextEdge(IEnumerator<int>[] enumerators, bool[] isEnd)
