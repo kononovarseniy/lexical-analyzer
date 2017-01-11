@@ -78,23 +78,115 @@ namespace SParser
             PrintRegexTree(tree);
             return tree;
         }
-        static void PrintFsm<TState, TSymbol>(FsmInfo<TState, TSymbol> fsm)
+        static void PrintFsm<TSymbol>(FsmInfo<int[], TSymbol> fsm)
         {
             Console.WriteLine($"States[{fsm.States.Length}]:");
             for (int i = 0; i < fsm.States.Length; i++)
-                Console.WriteLine($"    #{i}\t{fsm.States[i]}\tFinal: {fsm.FinalStates.Contains(i)}");
+            {
+                Console.WriteLine($"    #{i}\t{{{string.Join(", ", fsm.States[i])}}}\tFinal: {fsm.FinalStates.Contains(i)}");
+            }
             Console.WriteLine($"Transitions[{fsm.Transitions.Length}]:");
             foreach (var t in fsm.Transitions)
                 Console.WriteLine($"    {t}");
         }
-        static FsmInfo<int, IntSet> BuildNfa(RegexTree tree)
+        static FsmInfo<int[], IntSet> BuildNfa(RegexTree tree)
         {
             int counter = 0;
-            var builder = new NfaBuilder<int, IntSet>(() => counter++);
+            var builder = new NfaBuilder<int[], IntSet>(() => new[] { counter++ });
             var nfa = tree.ToFsm(builder);
             PrintFsm(nfa);
             return nfa;
         }
+        static FsmInfo<int[], int> BuildDfa(FsmInfo<int[], int> nfa, int alphabetLength)
+        {
+            var builder = new DfaBuilder<int[]>(
+                alphabetLength,
+                (s) => s.Aggregate(
+                    Enumerable.Empty<int>(),
+                    (acc, item) => acc.Concat(item),
+                    (acc) => acc.ToArray()));
+
+            Console.WriteLine("Building DFA from NFA...");
+            var res = builder.Build(nfa);
+            PrintFsm(res);
+            return res;
+
+            //// alphabetLength = 2;
+            //var builder = new DfaBuilder<int[]>(
+            //    alphabetLength,
+            //    (s) => s.Aggregate(
+            //        Enumerable.Empty<int>(),
+            //        (acc, item) => acc.Concat(item),
+            //        (acc) => acc.ToArray()));
+
+            ////const int a = 0;
+            ////const int b = 1;
+            ////nfa = new FsmInfo<int[], int>(
+            ////    states: Enumerable.Range(0, 4).Select(i => new int[] { i }).ToArray(),
+            ////    transitions: new FsmTransition<int>[]
+            ////    {
+            ////        new FsmTransition<int>(0, 3, b),
+            ////        new FsmTransition<int>(0, 1, a),
+            ////        new FsmTransition<int>(0, 2),
+            ////        new FsmTransition<int>(1, 3),
+            ////        new FsmTransition<int>(2, 1, b),
+            ////        new FsmTransition<int>(3, 1, a),
+            ////        new FsmTransition<int>(3, 2)
+            ////    },
+            ////    finalStates: new HashSet<int>() { 3 });
+
+            //Console.WriteLine("RemoveEmptyTransitions");
+            //var tmp = builder.RemoveEmptyTransitions(nfa);
+            //PrintFsm(tmp);
+            /////////////////////////////
+            ////tmp = new FsmInfo<int[], int>(
+            ////    states: new int[][]
+            ////    {
+            ////        new[] { 0 },
+            ////        new[] { 1 },
+            ////        new[] { 2 }, // not exists
+            ////        new[] { 3 }
+            ////    },
+            ////    transitions: new FsmTransition<int>[]
+            ////    {
+            ////        new FsmTransition<int>(0, 3, b),
+            ////        new FsmTransition<int>(0, 1, a),
+            ////        new FsmTransition<int>(0, 1, b),
+            ////        new FsmTransition<int>(1, 1, a),
+            ////        new FsmTransition<int>(1, 1, b),
+            ////        new FsmTransition<int>(3, 1, a),
+            ////        new FsmTransition<int>(3, 1, b)
+            ////    },
+            ////    finalStates: new HashSet<int>() { 1, 3 });
+
+            //Console.WriteLine("Determinize");
+            //var res = builder.Determinize(tmp);
+            //PrintFsm(res);
+            //return res;
+        }
+        static void Execute(FsmInfo<int[], int> dfa, AlphabetConverter converter, string inputString)
+        {
+            int[] terminals = inputString
+                .Select(ch => converter.ConvertValue(ch))
+                .ToArray();
+
+            int state = 0;
+            for (int i = 0; i < terminals.Length; i++)
+            {
+                int term = terminals[i];
+                
+                state = dfa.Transitions.First(t => t.From == state && t.Symbol == term).To;
+            }
+            if (dfa.FinalStates.Contains(state))
+            {
+                Console.WriteLine("Sequence accepted!!!");
+            }
+            else
+            {
+                Console.WriteLine("No match");
+            }
+        }
+
 
         static void Main(string[] args)
         {
@@ -153,8 +245,32 @@ namespace SParser
             Console.WriteLine("Press enter to build nfa.");
             Console.ReadLine();
 
-            var tree = ParseRegex("[0-9](a|(b*B)|c)?!+");
+            var tree = ParseRegex("[0-9](a|(b*B)|c|b*C)?!+");
             var nfa = BuildNfa(tree);
+            var converter = AlphabetConverter.Create(nfa);
+            var convertedNfa = converter.ConvertFsm(nfa);
+            PrintFsm(convertedNfa);
+            var dfa = BuildDfa(convertedNfa, converter.AlphabetLength);
+            Execute(dfa, converter, "4bB!");
+            Execute(dfa, converter, "4bbB!!");
+            Execute(dfa, converter, "5bB!");
+            Execute(dfa, converter, "4a!");
+            Execute(dfa, converter, "4c!");
+            Execute(dfa, converter, "4c!!");
+            Execute(dfa, converter, "4!!");
+            Execute(dfa, converter, "4!");
+            Execute(dfa, converter, "4bbC!!");
+            Execute(dfa, converter, "5bC!");
+            Console.WriteLine("===");
+            Execute(dfa, converter, "4bb!");
+            Execute(dfa, converter, "4bbB");
+            Execute(dfa, converter, "bB!");
+            Execute(dfa, converter, "4b!");
+            Execute(dfa, converter, "4Q!");
+            Execute(dfa, converter, "4c");
+            Execute(dfa, converter, "!!");
+            Execute(dfa, converter, "");
+
             Console.ReadLine();
         }
     }

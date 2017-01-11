@@ -10,29 +10,6 @@ namespace LexicalAnalyzer.FsmNS.Builders
 {
     public class AlphabetConverter
     {
-        private class BoolArrayEqualityComparer : IEqualityComparer<bool[]>
-        {
-            public bool Equals(bool[] x, bool[] y)
-            {
-                if (x.Length == y.Length)
-                {
-                    for (int i = 0; i < x.Length; i++)
-                        if (x[i] != y[i])
-                            return false;
-                    return true;
-                }
-                else return false;
-            }
-
-            public int GetHashCode(bool[] obj)
-            {
-                int res = 0;
-                for (int i = 0; i < obj.Length; i++)
-                    if (obj[i]) res++;
-                return res;
-            }
-        }
-
         private List<int> edges;
         private List<int> values;
         private Dictionary<IntSet, List<int>> composition;
@@ -42,18 +19,29 @@ namespace LexicalAnalyzer.FsmNS.Builders
         /// </summary>
         public const int ComplementID = 0;
 
-        public int Count { get; private set; }
+        public int AlphabetLength { get; private set; }
 
+        /// <summary>
+        /// Create converter from sets
+        /// </summary>
         public AlphabetConverter(IEnumerable<IntSet> sets)
         {
             Initialize(sets);
         }
 
+        /// <summary>
+        /// Create converter from sets
+        /// </summary>
         public static AlphabetConverter Create(IEnumerable<IntSet> sets)
         {
             return new AlphabetConverter(sets);
         }
 
+        /// <summary>
+        /// Create converter from FSM.
+        /// </summary>
+        /// <typeparam name="TState">Type of state in FSM</typeparam>
+        /// <param name="fsm">FSM from which sets of elements are taken</param>
         public static AlphabetConverter Create<TState>(FsmInfo<TState, IntSet> fsm)
         {
             return new AlphabetConverter(from t in fsm.Transitions
@@ -109,6 +97,10 @@ namespace LexicalAnalyzer.FsmNS.Builders
             return new FsmInfo<TState, int>(states, transitions.ToArray(), final);
         }
 
+        /// <summary>
+        /// Разбить все элементы объединения множеств
+        /// на группы(множества) элементов принадлежащих одним и тем же множествам.
+        /// </summary>
         private void Initialize(IEnumerable<IntSet> sets)
         {
             var uniqueSets = new HashSet<IntSet>(sets);
@@ -160,7 +152,7 @@ namespace LexicalAnalyzer.FsmNS.Builders
             this.composition = map.ToDictionary(
                 kvp => kvp.Key,
                 kvp => composition[kvp.Value]);
-            Count = idCounter;
+            AlphabetLength = idCounter;
         }
 
         private static int? GetNextEdge(IEnumerator<int>[] enumerators, bool[] isEnd)

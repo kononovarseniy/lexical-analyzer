@@ -25,6 +25,23 @@ namespace LexicalAnalyzer.FsmNS.Types
         public FsmTransition(int from, int to)
             : this(from, to, default(TSymbol), false) { }
 
+        public FsmTransition<TSymbol> Clone()
+        {
+            return new FsmTransition<TSymbol>(From, To, Symbol, HasSymbol);
+        }
+        public FsmTransition<TSymbol> SetFrom(int newFrom)
+        {
+            return new FsmTransition<TSymbol>(newFrom, To, Symbol, HasSymbol);
+        }
+        public FsmTransition<TSymbol> SetTo(int newTo)
+        {
+            return new FsmTransition<TSymbol>(From, newTo, Symbol, HasSymbol);
+        }
+        public FsmTransition<TSymbol> SetFromAndTo(int newFrom, int newTo)
+        {
+            return new FsmTransition<TSymbol>(newFrom, newTo, Symbol, HasSymbol);
+        }
+
         private static IEnumerable<FsmTransition<TSymbol>> CreateTransitionsImpl(int from, IEnumerable<int> to, TSymbol symbol, bool hasSymbol)
         {
             return to.Select(it => new FsmTransition<TSymbol>(from, it, symbol, hasSymbol));
