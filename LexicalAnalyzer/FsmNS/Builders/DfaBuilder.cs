@@ -239,5 +239,22 @@ namespace LexicalAnalyzer.FsmNS.Builders
         {
             throw new NotImplementedException();
         }
+
+        public static FsmInfo<TState, int> Complement(FsmInfo<TState, int> dfa)
+        {
+            var newStates = new TState[dfa.States.Length];
+            dfa.States.CopyTo(newStates, 0);
+
+            var newTransitions = new FsmTransition<int>[dfa.Transitions.Length];
+            dfa.Transitions.CopyTo(newTransitions, 0);
+
+            var newFinal = new HashSet<int>(Enumerable.Range(0, dfa.States.Length));
+            newFinal.ExceptWith(dfa.FinalStates);
+
+            return new FsmInfo<TState, int>(
+                states: newStates,
+                transitions: newTransitions,
+                finalStates: newFinal);
+        }
     }
 }

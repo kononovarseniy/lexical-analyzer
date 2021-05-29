@@ -56,9 +56,8 @@ namespace LexicalAnalyzer.Utils
         public bool Equals(HashSet<T> x, HashSet<T> y)
         {
             var xCopy = new HashSet<T>(x);
-            bool res = x.Count() == y.Count();
-            xCopy.ExceptWith(y);
-            return res && xCopy.Count() == 0;
+            xCopy.SymmetricExceptWith(y);
+            return xCopy.Count() == 0;
         }
 
         public int GetHashCode(HashSet<T> obj)

@@ -21,6 +21,109 @@ namespace SParser
             Value = text.Substring(1, text.Length - 2).Replace("\"\"", "\"");
         }
     }
+
+    class Lex
+    {
+        public int Start { get; set; }
+        public int Length { get; set; }
+        public string Name { get; set; }
+    }
+    class Lexer3
+    {
+        public IEnumerable<Lex> Do(FsmInfo<string, int> dfa, AlphabetConverter converter, string input)
+        {
+            int[] inputTerm = input.Select(ch => converter.ConvertValue(ch)).ToArray();
+
+            Lex currentLex = new Lex()
+            {
+                Start = 0,
+                Length = 0,
+                Name = null
+            };
+            int state = 0;
+            for (int i = 0; i < inputTerm.Length; i++)
+            {
+                int term = inputTerm[i];
+                int newState = dfa.Transitions.First(t => t.From == state && t.Symbol == term).To;
+                if (dfa.States[newState] == "__error__")
+                {
+                    currentLex.Name = "__error__";
+                    yield return currentLex;
+                    state = 0;
+                    currentLex = new Lex()
+                    {
+                        Start = i,
+                        Length = 0,
+                        Name = null
+                    };
+                }
+                else
+                {
+
+                }
+            }
+        }
+    }
+
+    class FsmExporter
+    {
+        public static void ExportCsv<TState, TSymbol>(FsmInfo<TState, TSymbol> fsm, string edgesFile, string separator = ",")
+        {
+            using (var file = File.CreateText(edgesFile))
+            {
+                var allTransitions = from t in fsm.Transitions
+                                     group t by new { t.From, t.To } into @group
+                                     select new
+                                     {
+                                         From = @group.Key.From,
+                                         To = @group.Key.To,
+                                         Symbols = from t in @group
+                                                   select t.HasSymbol ? t.Symbol.ToString() : "\u03BB" into t
+                                                   group t by t into t
+                                                   select t.Key
+                                     } into t
+                                     select new
+                                     {
+                                         From = t.From,
+                                         To = t.To,
+                                         Symbol = string.Join(",", t.Symbols)
+                                     };
+
+                file.WriteLine("nodedef>name VARCHAR,label VARCHAR,color VARCHAR");
+                for (int i = 0; i < fsm.States.Length; i++)
+                {
+                    int r = 0, g = 0, b = 0;
+                    string label = i.ToString();
+                    if (i == 0)
+                    {
+                        g = 255;
+                        label += ",FIRST";
+                    }
+                    if (fsm.FinalStates.Contains(i))
+                    {
+                        b = 255;
+                        label += ",FINAL";
+                    }
+                    if (fsm.Transitions.Where(t => t.From == i).All(t => t.To == i))
+                    {
+                        r = 255;
+                        label += ",!!!";
+                    }
+                    if (r == 0 && g == 0 && b == 0)
+                    {
+                        r = 100; g = 100; b = 100;
+                    }
+                    file.WriteLine($"{i},'{label}','{r},{g},{b}'");
+                }
+                file.WriteLine($"edgedef>node1 VARCHAR,node2 VARCHAR,label VARCHAR,directed BOOLEAN,color VARCHAR");
+                foreach (var t in allTransitions)
+                {
+                    file.WriteLine($"{t.From},{t.To},'{t.Symbol}',true,'0,0,0'");
+                }
+            }
+        }
+    }
+
     class Program
     {
         static void Output(IEnumerable<Lexeme> tokens)
@@ -164,7 +267,8 @@ namespace SParser
             //PrintFsm(res);
             //return res;
         }
-        static void Execute(FsmInfo<int[], int> dfa, AlphabetConverter converter, string inputString)
+        
+        static bool Execute(FsmInfo<int[], int> dfa, AlphabetConverter converter, string inputString)
         {
             int[] terminals = inputString
                 .Select(ch => converter.ConvertValue(ch))
@@ -177,18 +281,10 @@ namespace SParser
                 
                 state = dfa.Transitions.First(t => t.From == state && t.Symbol == term).To;
             }
-            if (dfa.FinalStates.Contains(state))
-            {
-                Console.WriteLine("Sequence accepted!!!");
-            }
-            else
-            {
-                Console.WriteLine("No match");
-            }
+            return dfa.FinalStates.Contains(state);
         }
-
-
-        static void Main(string[] args)
+        
+        static void Test1()
         {
             // Load file
             string input = File.ReadAllText(@"..\..\..\input2.txt");
@@ -241,35 +337,138 @@ namespace SParser
                 Output(lexLines[i]);
                 Console.WriteLine("---");
             }
+        }
 
-            Console.WriteLine("Press enter to build nfa.");
-            Console.ReadLine();
+        static void TestRegexToDfa(string regex, string[] goodInput, string[] badInput, bool complement, string exportFile = null)
+        {
+            Console.WriteLine($"Regular expression: {regex}");
+            // Parse regex
+            RegexTree regexTree = RegexParser.Parse(regex);
+            // Create NFA builder
+            int stateIdCounter = 0;
+            NfaBuilder<int[], IntSet> nfaBuilder =
+                new NfaBuilder<int[], IntSet>(
+                    () => new[] { stateIdCounter++ });
+            // Build NFA from regexTree
+            FsmInfo<int[], IntSet> nfa = regexTree.ToFsm(nfaBuilder);
+            // Create alphabet converter
+            AlphabetConverter converter = AlphabetConverter.Create(nfa);
+            // Convert NFA alphabet
+            FsmInfo<int[], int> convertedNfa = converter.ConvertFsm(nfa);
+            // Create DFA builder
+            DfaBuilder<int[]> dfaBuilder = new DfaBuilder<int[]>(
+                converter.AlphabetLength,
+                (s) => s.Aggregate(
+                    Enumerable.Empty<int>(),
+                    (acc, item) => acc.Concat(item),
+                    (acc) => acc.ToArray()));
+            // Build DFA from NFA
+            FsmInfo<int[], int> dfa = dfaBuilder.Build(convertedNfa);
+            if (complement)
+            {
+                dfa = DfaBuilder<int[]>.Complement(dfa);
+            }
+            if (exportFile != null)
+            {
+                FsmExporter.ExportCsv(dfa, exportFile, ",");
+            }
+            // Execute
+            Console.WriteLine("Good input");
+            foreach (var inputStr in goodInput)
+            {
+                Console.Write($@"{inputStr,-20}");
+                if (Execute(dfa, converter, inputStr))
+                {
+                    Console.WriteLine("Sequence accepted!!!");
+                }
+                else
+                {
+                    Console.WriteLine("No match");
+                }
+            }
+            Console.WriteLine("=====");
+            Console.WriteLine("Bad input");
+            foreach (var inputStr in badInput)
+            {
+                Console.Write($@"{inputStr,-20}");
+                if (Execute(dfa, converter, inputStr))
+                {
+                    Console.WriteLine("Sequence accepted!!!");
+                }
+                else
+                {
+                    Console.WriteLine("No match");
+                }
+            }
+            Console.WriteLine("=====");
+        }
 
-            var tree = ParseRegex("[0-9](a|(b*B)|c|b*C)?!+");
-            var nfa = BuildNfa(tree);
-            var converter = AlphabetConverter.Create(nfa);
-            var convertedNfa = converter.ConvertFsm(nfa);
-            PrintFsm(convertedNfa);
-            var dfa = BuildDfa(convertedNfa, converter.AlphabetLength);
-            Execute(dfa, converter, "4bB!");
-            Execute(dfa, converter, "4bbB!!");
-            Execute(dfa, converter, "5bB!");
-            Execute(dfa, converter, "4a!");
-            Execute(dfa, converter, "4c!");
-            Execute(dfa, converter, "4c!!");
-            Execute(dfa, converter, "4!!");
-            Execute(dfa, converter, "4!");
-            Execute(dfa, converter, "4bbC!!");
-            Execute(dfa, converter, "5bC!");
-            Console.WriteLine("===");
-            Execute(dfa, converter, "4bb!");
-            Execute(dfa, converter, "4bbB");
-            Execute(dfa, converter, "bB!");
-            Execute(dfa, converter, "4b!");
-            Execute(dfa, converter, "4Q!");
-            Execute(dfa, converter, "4c");
-            Execute(dfa, converter, "!!");
-            Execute(dfa, converter, "");
+        static void Main(string[] args)
+        {
+            string regex;
+            string[] goodInput, badInput;
+            
+            #region regex1
+            regex = "[0-9](a|(b*B)|c|b*C)?!+";
+            goodInput = new string[]
+            {
+                "4bB!",
+                "4bbB!!",
+                "5bB!",
+                "4a!",
+                "4c!",
+                "4c!!",
+                "4!!",
+                "4!",
+                "4bbC!!",
+                "5bC!"
+            };
+            badInput = new string[]
+            {
+                "4bb!",
+                "4bbB",
+                "bB!",
+                "4b!",
+                "4Q!",
+                "4c",
+                "!!",
+                ""
+            };
+            TestRegexToDfa(regex, goodInput, badInput, false, "regex1.gdf");
+            TestRegexToDfa(regex, goodInput, badInput, true);
+            #endregion
+
+            #region ip regex
+            string byteRegex = @"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
+            regex = $@"{byteRegex}\.{byteRegex}\.{byteRegex}(\.{byteRegex})";
+            goodInput = new string[]
+            {
+                "1.2.3.4",
+                "255.249.199.99",
+                "127.0.0.1",
+                "192.168.1.255",
+                "123.123.123.123",
+                "123.123.123.000",
+            };
+            badInput = new string[]
+            {
+                "1.2.3.999",
+                "256.349.199.99",
+                "127.0.0",
+                "192.168.1111.111",
+                "123.123.123.123.123",
+            };
+            TestRegexToDfa(regex, goodInput, badInput, false, "ip.gdf");
+            TestRegexToDfa(regex, goodInput, badInput, true);
+            #endregion
+
+            //var tree = ParseRegex("[0-9](a|(b*B)|c|b*C)?!+");
+            //var nfa = BuildNfa(tree);
+            //var converter = AlphabetConverter.Create(nfa);
+            //var convertedNfa = converter.ConvertFsm(nfa);
+            //PrintFsm(convertedNfa);
+            //var dfa = BuildDfa(convertedNfa, converter.AlphabetLength);
+            //Execute(dfa, converter, "4bB!");
 
             Console.ReadLine();
         }
